@@ -1,0 +1,190 @@
+--- Product Entry ---
+Product ID: 10
+Name: Nivea Soft Moisturizing Cream
+Description: Nivea Soft is a refreshing moisturizing cream with jojoba oil and Vitamin E. It is quickly absorbed and leaves your skin soft and smooth. Suitable for face, body, and hands, it's perfect for everyday use.
+Price: 20.0 UZS
+Category: cream
+Image File ID: AgACAgIAAxkBAAIKo2gt2O8KEtGdJqUefOA3ahYmYkABAAJtATIbF-FxSW5OVFsi0nOLAQADAgADbQADNgQ
+Store ID: 1
+Added At: 2025-05-21 18:45:19
+
+--- Product Entry ---
+Product ID: 11
+Name: ew
+Description: ew
+Price: 21.0 UZS
+Category: ffea
+Image File ID: AgACAgIAAxkBAAIK1GguInIVfVW5COBBa-oHDUldRsaWAAIkBDIbF-FxSUSLeS8GbhP1AQADAgADeQADNgQ
+Store ID: 1
+Added At: 2025-05-21 23:58:59
+
+--- Product Entry ---
+Product ID: 12
+Name: rea
+Description: gree
+Price: 403.0 UZS
+Category: fqfq
+Image File ID: AgACAgIAAxkBAAIK32guIoZsuWR7WyjMFmDVAyzGVCsYAAIlBDIbF-FxSYEq81GQ7d1EAQADAgADeAADNgQ
+Store ID: 1
+Added At: 2025-05-21 23:59:31
+
+--- Product Entry ---
+Product ID: 13
+Name: dsadea
+Description: dada
+Price: 10.0 UZS
+Category: care
+Image File ID: AgACAgIAAxkBAAILFmguKBCPUAhnY77hXWuPLDgGYUQ2AAI3BDIbF-FxSc7Wpb6CwLXpAQADAgADbQADNgQ
+Store ID: 1
+Added At: 2025-05-22 00:22:57
+
+--- Product Entry ---
+Product ID: 14
+Name: Coca-cola
+Description: "Sovuq Coca-Cola — har qanday vaqtda ajoyib tetiklantiruvchi ichimlik."
+Price: 6.9 UZS
+Category: drinks
+Image File ID: AgACAgIAAxkBAAILFmguKBCPUAhnY77hXWuPLDgGYUQ2AAI3BDIbF-FxSc7Wpb6CwLXpAQADAgADbQADNgQ
+Store ID: 1
+Added At: 2025-05-22 00:55:39
+
+--- Product Entry ---
+Product ID: 15
+Name: tort
+Description: sweets
+Price: 25.0 UZS
+Category: cake
+Image File ID: AgACAgIAAxkBAAILqmguL-uBdilWCFEZty_78E6VJwb_AAJOBDIbF-FxSZF94XQh9oovAQADAgADbQADNgQ
+Store ID: 1
+Added At: 2025-05-22 00:56:27
+
+--- Product Entry ---
+Product ID: 16
+Name: PallMall
+Description: Zarar
+Price: 19.0 UZS
+Category: Sigarette
+Image File ID: AgACAgIAAxkBAAILt2guMBUKLuM2GmqCETr4-t0upVqOAAJPBDIbF-FxSaZ-yt9fiw7fAQADAgADbQADNgQ
+Store ID: 1
+Added At: 2025-05-22 00:57:10
+
+--- Product Entry ---
+Product ID: 17
+Name: Toys
+Description: For kids
+Price: 25.0 UZS
+Category: Toys
+Image File ID: AgACAgIAAxkBAAIL3mguMKGoMAlGozidojoHpQAB4FUC5wACVgQyGxfhcUkzOJXwJ3gFggEAAwIAA3kAAzYE
+Store ID: 1
+Added At: 2025-05-22 00:59:30
+
+--- Product Entry ---
+Product ID: 18
+Name: Water
+Description: Foydali
+Price: 3.0 UZS
+Category: Drinks
+Image File ID: AgACAgIAAxkBAAIL62guMNmZHievhmwT8lM8mmP199nvAAJXBDIbF-FxSZWQmN5lXrLcAQADAgADeQADNgQ
+Store ID: 1
+Added At: 2025-05-22 01:00:26
+
+--- Product Entry ---
+Product ID: 19
+Name: Dev
+Description: Maklatura
+Price: 8.0 UZS
+Category: Hejsn
+Image File ID: AgACAgIAAxkBAAIL-GguMR7UsV3Lhz7ALewJoMyTNbX9AAIR8DEbBYJxSQ5U14j01vvZAQADAgADeQADNgQ
+Store ID: 1
+Added At: 2025-05-22 01:01:35
+
+--- Product Entry ---
+Product ID: 20
+Name: Coca-Cola 1L
+Description: Gazli, tetiklashtiruvchi ichimlik.
+Price: 10.0 UZS
+Category: Ichimliklar
+Image File ID: AgACAgIAAxkBAAILFmguKBCPUAhnY77hXWuPLDgGYUQ2AAI3BDIbF-FxSc7Wpb6CwLXpAQADAgADbQADNgQ
+Store ID: 1
+Added At: 2025-05-22 01:12:38
+
+--- Product Entry ---
+Product ID: 21
+Name: Lay's Classic
+Description: Tuzli kartoshka chipslari, gazak uchun ajoyib.
+Price: 12.0 UZS
+Category: Gazaklar
+Image File ID: AgACAgIAAxkBAAIMOWguM-y_rWOZEi4CfidyKI2SPVRTAAJgBDIbF-FxSVuHvvPRvkA_AQADAgADbQADNgQ
+Store ID: 1
+Added At: 2025-05-22 01:13:32
+
+--- Product Entry ---
+Product ID: 22
+Name: Snickers
+Description: Yong‘oq va karamel bilan shokoladli batonchik.
+Price: 8.0 UZS
+Category: Shirinliklar
+Image File ID: AgACAgIAAxkBAAIMRmguNBrpg3gSQa7MptJW5unCs6rAAAJhBDIbF-FxSfpWeS-FsXjvAQADAgADbQADNgQ
+Store ID: 1
+Added At: 2025-05-22 01:14:19
+
+--- Product Entry ---
+Product ID: 23
+Name: Mini Hamburger
+Description: Go‘shtli kichik burger, tez tayyorlanadi.
+Price: 18.0 UZS
+Category: Fast food
+Image File ID: AgACAgIAAxkBAAIMU2guNFdZG3KVLRvYQrfG52wNA2CpAAJiBDIbF-FxSdMeuSB1VpycAQADAgADbQADNgQ
+Store ID: 1
+Added At: 2025-05-22 01:15:20
+
+--- Product Entry ---
+Product ID: 24
+Name: Samsa
+Description: Go‘shtli qatlama xamirli o‘zbekcha pishiriq.
+Price: 7.0 UZS
+Category: Non
+Image File ID: AgACAgIAAxkBAAIMYGguNIF4fmSOhqFKtzrUqgABqpH4bAACZAQyGxfhcUlhv3p65lf5uwEAAwIAA20AAzYE
+Store ID: 1
+Added At: 2025-05-22 01:16:02
+
+--- Product Entry ---
+Product ID: 25
+Name: Olma (1kg)
+Description: Yangi, shirin va shirador meva.
+Price: 13.0 UZS
+Category: Mevalar
+Image File ID: AgACAgIAAxkBAAIMdmguNNQEn5-hK5xGMmmI0Zc4rwHLAAJoBDIbF-FxSemBrDIiJodgAQADAgADeAADNgQ
+Store ID: 1
+Added At: 2025-05-22 01:17:25
+
+--- Product Entry ---
+Product ID: 26
+Name: Qatiq 1L
+Description: Tabiiy achitilgan sut mahsuloti.
+Price: 6.0 UZS
+Category: Sut mahsulotlari
+Image File ID: AgACAgIAAxkBAAIMg2guNQhMo-r-_SlCVMJKbomOdUvpAAJpBDIbF-FxSbtjEzY3PY6NAQADAgADbQADNgQ
+Store ID: 1
+Added At: 2025-05-22 01:18:17
+
+--- Product Entry ---
+Product ID: 27
+Name: Tog' suvi 1.5L
+Description: Toza va tiniq tog‘ manbali ichimlik suvi.
+Price: 5.0 UZS
+Category: Suv
+Image File ID: AgACAgIAAxkBAAIMkGguNT0MpvVCXm6r4soxXRaabVm-AAJrBDIbF-FxSQioswe0gb6jAQADAgADbQADNgQ
+Store ID: 1
+Added At: 2025-05-22 01:19:10
+
+--- Product Entry ---
+Product ID: 65
+Name: k
+Description: k
+Price: 9.0 UZS
+Category: ko
+Image File ID: AgACAgIAAxkBAAIOCWgzMF74UVUb8iBH1qyf3bjLY-17AAIT_jEb0WSgSTaZlyh6Wa_tAQADAgADbQADNgQ
+Store ID: 1
+Added At: 2025-05-25 19:59:41
+
