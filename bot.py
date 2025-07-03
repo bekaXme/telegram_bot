@@ -116,7 +116,7 @@ LANGUAGES = {
         "choose_promo": "🎁 Promo kodni tanlang:",
         "delete_promo": "🗑️ Promo kodni o'chirish",
         "change_name": "📝 Ismni o'zgartirish",
-        "	change_language": "🌐 Tilni o'zgartirish",
+        "change_language": "🌐 Tilni o'zgartirish",
         "language_changed": "✅ Til o'zgartirildi!",
         "invalid_promo": "❌ Noto'g'ri promo kod yoki chegirma limitiga yetdi.",
         "order_details": "📦 *Buyurtma*: {order_id}\n👤 Foydalanuvchi: {user_name}\n📞 Telefon: {phone}\n🏬 Do'kon: {store}\n🛍️ Mahsulotlar: {products}\n💳 To'lov: {payment}\n⏰ Yetkazib berish: {delivery}\n💵 Jami: {total} UZS (Yetkazib berish: {delivery_fee} UZS)",
@@ -1026,8 +1026,8 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         keyboard = [[InlineKeyboardButton(p[0], callback_data=f"admin_promo_{p[0]}")] for p in promos]
         keyboard.append([
             InlineKeyboardButton(LANGUAGES[lang]["add_product"], callback_data="admin_add_promo"),
-            InlineKeyboardButton(LANGUAGES[lang]["go_back"], callback_data=f"admin_store_{context.user_data.get('admin_store_id', 1)}")]
-        )
+            InlineKeyboardButton(LANGUAGES[lang]["go_back"], callback_data=f"admin_store_{context.user_data.get('admin_store_id', 1)}")
+        ])
         await delete_previous_message(context, user_id)
         message = await query.message.reply_text(
             LANGUAGES[lang]["choose_promo"],
@@ -1338,14 +1338,14 @@ async def submit_order(query, context: ContextTypes.DEFAULT_TYPE, lang: str):
         )
         await delete_previous_message(context, user_id)
         message = await query.message.reply_text(
-            LANGUAGES[lang]["order_submitted"],
+                        LANGUAGES[lang]["order_submitted"],
             parse_mode="Markdown"
         )
         context.user_data["last_message_id"] = message.message_id
         context.user_data["message_type"] = "alert"
         for admin in ADMIN_ID:
+            keyboard = [[InlineKeyboardButton(LANGUAGES[lang]["confirm_order"], callback_data=f"confirm_order_{order_id}")]]
             try:
-                keyboard = [[InlineKeyboardButton(LANGUAGES[lang]["confirm_order"], callback_data=f"confirm_order_{order_id}")]]
                 await context.bot.send_message(
                     admin,
                     order_details,
@@ -1368,7 +1368,6 @@ async def submit_order(query, context: ContextTypes.DEFAULT_TYPE, lang: str):
     finally:
         conn.close()
 
-# Show categories with pagination
 async def show_categories(message, context: ContextTypes.DEFAULT_TYPE, lang: str, store_id: int):
     conn = sqlite3.connect("store_bot.db")
     try:
@@ -1377,10 +1376,21 @@ async def show_categories(message, context: ContextTypes.DEFAULT_TYPE, lang: str
         categories = [row[0] for row in c.fetchall()]
     finally:
         conn.close()
-    category_offset = context.user_data.get("category_offset", 0)
-    paginated_categories = categories[category_offset:category_offset + ITEMS_PER_BATCH]
-    keyboard = [[InlineKeyboardButton(cat, callback_data=f"category_{cat}")] for cat in paginated_categories]
-    if len(categories) > category_offset + ITEMS_PER_BATCH:
+    if not categories:
+        keyboard = [[InlineKeyboardButton(LANGUAGES[lang]["go_back"], callback_data="main_menu")]]
+        await delete_previous_message(context, message.chat_id)
+        new_message = await message.reply_text(
+            LANGUAGES[lang]["no_products"],
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            parse_mode="Markdown"
+        )
+        context.user_data["last_message_id"] = new_message.message_id
+        context.user_data["message_type"] = "button"
+        return
+    offset = context.user_data.get("category_offset", 0)
+    categories_batch = categories[offset:offset + ITEMS_PER_BATCH]
+    keyboard = [[InlineKeyboardButton(cat, callback_data=f"category_{cat}")] for cat in categories_batch]
+    if len(categories) > offset + ITEMS_PER_BATCH:
         keyboard.append([InlineKeyboardButton(LANGUAGES[lang]["load_more"], callback_data="load_more_categories")])
     keyboard.append([InlineKeyboardButton(LANGUAGES[lang]["go_back"], callback_data="main_menu")])
     await delete_previous_message(context, message.chat_id)
@@ -1392,19 +1402,15 @@ async def show_categories(message, context: ContextTypes.DEFAULT_TYPE, lang: str
     context.user_data["last_message_id"] = new_message.message_id
     context.user_data["message_type"] = "button"
 
-# Show products with pagination
 async def show_products(message, context: ContextTypes.DEFAULT_TYPE, lang: str):
     store_id = context.user_data.get("store_id", 1)
-    category = context.user_data.get("category", "")
-    product_offset = context.user_data.get("product_offset", 0)
+    category = context.user_data.get("category")
     conn = sqlite3.connect("store_bot.db")
     try:
         c = conn.cursor()
-        c.execute("SELECT id, name, description, image, price FROM products WHERE store_id = ? AND category = ? LIMIT ? OFFSET ?",
-                 (store_id, category, ITEMS_PER_BATCH, product_offset))
+        c.execute("SELECT id, name, description, image, price FROM products WHERE store_id = ? AND category = ?",
+                  (store_id, category))
         products = c.fetchall()
-        c.execute("SELECT COUNT(*) FROM products WHERE store_id = ? AND category = ?", (store_id, category))
-        total_products = c.fetchone()[0]
     finally:
         conn.close()
     if not products:
@@ -1416,47 +1422,60 @@ async def show_products(message, context: ContextTypes.DEFAULT_TYPE, lang: str):
             parse_mode="Markdown"
         )
         context.user_data["last_message_id"] = new_message.message_id
-        context.user_data["message_type"] = "alert"
+        context.user_data["message_type"] = "button"
         return
-    for product in products:
+    offset = context.user_data.get("product_offset", 0)
+    products_batch = products[offset:offset + ITEMS_PER_BATCH]
+    for product in products_batch:
         product_id, name, description, image, price = product
         price = round(float(price), 3)
+        text = f"*{name}*\n{description}\n💵 {'{:.3f}'.format(price)} UZS"
         keyboard = [
             [InlineKeyboardButton(LANGUAGES[lang]["add_to_cart"], callback_data=f"add_to_cart_{product_id}")],
             [InlineKeyboardButton(LANGUAGES[lang]["go_back"], callback_data=f"category_{category}")]
         ]
-        if product_offset + ITEMS_PER_BATCH < total_products:
-            keyboard.insert(1, [InlineKeyboardButton(LANGUAGES[lang]["load_more"], callback_data="load_more_products")])
-        text = f"📦 *{name}*\n{description}\n💵 {'{:.3f}'.format(price)} UZS"
         await delete_previous_message(context, message.chat_id)
-        if image:
-            try:
+        try:
+            if image:
                 new_message = await message.reply_photo(
                     photo=image,
                     caption=text,
                     reply_markup=InlineKeyboardMarkup(keyboard),
                     parse_mode="Markdown"
                 )
-            except TelegramError:
+            else:
                 new_message = await message.reply_text(
                     text,
                     reply_markup=InlineKeyboardMarkup(keyboard),
                     parse_mode="Markdown"
                 )
-        else:
+            context.user_data["last_message_id"] = new_message.message_id
+            context.user_data["message_type"] = "button"
+        except TelegramError as e:
+            logger.error(f"Failed to send product {product_id}: {e}")
             new_message = await message.reply_text(
                 text,
                 reply_markup=InlineKeyboardMarkup(keyboard),
                 parse_mode="Markdown"
             )
+            context.user_data["last_message_id"] = new_message.message_id
+            context.user_data["message_type"] = "button"
+    if len(products) > offset + ITEMS_PER_BATCH:
+        keyboard = [
+            [InlineKeyboardButton(LANGUAGES[lang]["load_more"], callback_data="load_more_products")],
+            [InlineKeyboardButton(LANGUAGES[lang]["go_back"], callback_data=f"category_{category}")]
+        ]
+        new_message = await message.reply_text(
+            LANGUAGES[lang]["choose_product"],
+            reply_markup=InlineKeyboardMarkup(keyboard),
+            parse_mode="Markdown"
+        )
         context.user_data["last_message_id"] = new_message.message_id
         context.user_data["message_type"] = "button"
-        await asyncio.sleep(0.5)
 
-# Handle text and other inputs
-async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    text = update.message.text
+    text = update.message.text.strip() if update.message.text else ""
     conn = sqlite3.connect("store_bot.db")
     try:
         c = conn.cursor()
@@ -1466,37 +1485,36 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     finally:
         conn.close()
     state = context.user_data.get("state", "")
+    await delete_previous_message(context, user_id)
     if state == "awaiting_name":
         context.user_data["name"] = text
-        await delete_previous_message(context, user_id)
-        message = await update.message.reply_text(
+        new_message = await update.message.reply_text(
             LANGUAGES[lang]["enter_phone"],
             parse_mode="Markdown"
         )
-        context.user_data["last_message_id"] = message.message_id
+        context.user_data["last_message_id"] = new_message.message_id
         context.user_data["message_type"] = "alert"
         context.user_data["state"] = "awaiting_phone"
     elif state == "awaiting_phone":
-        if not re.match(r"^\+998\d{9}$", text):
-            await delete_previous_message(context, user_id)
-            message = await update.message.reply_text(
+        if re.match(r"^\+998\d{9}$", text):
+            conn = sqlite3.connect("store_bot.db")
+            try:
+                c = conn.cursor()
+                c.execute("INSERT INTO users (user_id, name, phone, language) VALUES (?, ?, ?, ?)",
+                          (user_id, context.user_data["name"], text, context.user_data["language"]))
+                conn.commit()
+            finally:
+                conn.close()
+            context.user_data["state"] = ""
+            await show_main_menu(update.message, context, context.user_data["language"])
+        else:
+            new_message = await update.message.reply_text(
                 LANGUAGES[lang]["invalid_phone"],
                 parse_mode="Markdown"
             )
-            context.user_data["last_message_id"] = message.message_id
+            context.user_data["last_message_id"] = new_message.message_id
             context.user_data["message_type"] = "alert"
-            return
-        conn = sqlite3.connect("store_bot.db")
-        try:
-            c = conn.cursor()
-            c.execute("INSERT INTO users (user_id, name, phone, language) VALUES (?, ?, ?, ?)",
-                      (user_id, context.user_data["name"], text, context.user_data.get("language", "en")))
-            conn.commit()
-        finally:
-            conn.close()
-        context.user_data["state"] = ""
-        await delete_previous_message(context, user_id)
-        await show_main_menu(update.message, context, lang)
+            context.user_data["state"] = "awaiting_phone"
     elif state == "awaiting_new_name":
         conn = sqlite3.connect("store_bot.db")
         try:
@@ -1505,12 +1523,11 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             conn.commit()
         finally:
             conn.close()
-        await delete_previous_message(context, user_id)
-        message = await update.message.reply_text(
+        new_message = await update.message.reply_text(
             LANGUAGES[lang]["change_name"],
             parse_mode="Markdown"
         )
-        context.user_data["last_message_id"] = message.message_id
+        context.user_data["last_message_id"] = new_message.message_id
         context.user_data["message_type"] = "alert"
         context.user_data["state"] = ""
         await show_main_menu(update.message, context, lang)
@@ -1518,34 +1535,30 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         try:
             amount = float(text.replace(",", "."))
             if amount <= 0:
-                raise ValueError
+                raise ValueError("Amount must be positive")
+            context.user_data["coin_amount"] = amount
+            new_message = await update.message.reply_text(
+                LANGUAGES[lang]["send_coin_check"].format(amount='{:.3f}'.format(amount * EXCHANGE_RATE)),
+                parse_mode="Markdown"
+            )
+            context.user_data["last_message_id"] = new_message.message_id
+            context.user_data["message_type"] = "alert"
+            context.user_data["state"] = "awaiting_coin_receipt"
         except ValueError:
-            await delete_previous_message(context, user_id)
-            message = await update.message.reply_text(
+            new_message = await update.message.reply_text(
                 LANGUAGES[lang]["invalid_coin_amount"],
                 parse_mode="Markdown"
             )
-            context.user_data["last_message_id"] = message.message_id
+            context.user_data["last_message_id"] = new_message.message_id
             context.user_data["message_type"] = "alert"
-            return
-        context.user_data["coin_amount"] = amount
-        await delete_previous_message(context, user_id)
-        message = await update.message.reply_text(
-            LANGUAGES[lang]["send_coin_check"].format(amount=amount),
-            parse_mode="Markdown"
-        )
-        context.user_data["last_message_id"] = message.message_id
-        context.user_data["message_type"] = "alert"
-        context.user_data["state"] = "awaiting_coin_receipt"
+            context.user_data["state"] = "awaiting_coin_amount"
     elif state == "awaiting_promo_code":
         context.user_data["promo_code"] = text
         keyboard = [
-            [InlineKeyboardButton(LANGUAGES[lang]["next_slot"].format(time=get_next_delivery_slot()), callback_data="choose_delivery_next"),
-             InlineKeyboardButton(LANGUAGES[lang]["admin_choose"], callback_data="choose_delivery_admin")],
-            [InlineKeyboardButton(LANGUAGES[lang]["set_time_myself"], callback_data="choose_delivery_custom"),
-             InlineKeyboardButton(LANGUAGES[lang]["cancel"], callback_data="main_menu")]
+            [InlineKeyboardButton(LANGUAGES[lang]["next_slot"].format(time=get_next_delivery_slot()), callback_data="choose_delivery_next")],
+            [InlineKeyboardButton(LANGUAGES[lang]["admin_choose"], callback_data="choose_delivery_admin")],
+            [InlineKeyboardButton(LANGUAGES[lang]["set_time_myself"], callback_data="choose_delivery_custom")]
         ]
-        await delete_previous_message(context, user_id)
         new_message = await update.message.reply_text(
             LANGUAGES[lang]["choose_delivery_time"],
             reply_markup=InlineKeyboardMarkup(keyboard),
@@ -1557,227 +1570,214 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif state == "awaiting_custom_delivery_time":
         delivery_time, error = parse_delivery_time(text, lang)
         if error:
-            await delete_previous_message(context, user_id)
-            message = await update.message.reply_text(
+            new_message = await update.message.reply_text(
                 error,
                 parse_mode="Markdown"
             )
-            context.user_data["last_message_id"] = message.message_id
+            context.user_data["last_message_id"] = new_message.message_id
             context.user_data["message_type"] = "alert"
-            return
-        context.user_data["delivery_time"] = delivery_time
-        await choose_payment(update.message, context, lang)
-        context.user_data["state"] = ""
+            context.user_data["state"] = "awaiting_custom_delivery_time"
+        else:
+            context.user_data["delivery_time"] = delivery_time
+            await choose_payment(update.message, context, lang)
+            context.user_data["state"] = ""
     elif state == "awaiting_feedback":
         try:
             rating = int(text)
             if 1 <= rating <= 5:
-                await delete_previous_message(context, user_id)
-                message = await update.message.reply_text(
-                    f"🌟 Thank you for your {rating} rating!",
+                new_message = await update.message.reply_text(
+                    "🌟 Thank you for your feedback!",
                     parse_mode="Markdown"
                 )
-                context.user_data["last_message_id"] = message.message_id
+                context.user_data["last_message_id"] = new_message.message_id
                 context.user_data["message_type"] = "alert"
                 context.user_data["state"] = ""
                 await show_main_menu(update.message, context, lang)
             else:
-                raise ValueError
+                new_message = await update.message.reply_text(
+                    LANGUAGES[lang]["invalid_feedback"],
+                    parse_mode="Markdown"
+                )
+                context.user_data["last_message_id"] = new_message.message_id
+                context.user_data["message_type"] = "alert"
         except ValueError:
-            await delete_previous_message(context, user_id)
-            message = await update.message.reply_text(
+            new_message = await update.message.reply_text(
                 LANGUAGES[lang]["invalid_feedback"],
                 parse_mode="Markdown"
             )
-            context.user_data["last_message_id"] = message.message_id
+            context.user_data["last_message_id"] = new_message.message_id
             context.user_data["message_type"] = "alert"
     elif state == "admin_awaiting_product_name":
         context.user_data["product_name"] = text
-        await delete_previous_message(context, user_id)
-        message = await update.message.reply_text(
+        new_message = await update.message.reply_text(
             LANGUAGES[lang]["enter_product_desc"],
             parse_mode="Markdown"
         )
-        context.user_data["last_message_id"] = message.message_id
+        context.user_data["last_message_id"] = new_message.message_id
         context.user_data["message_type"] = "alert"
-        context.user_data["state"] = "admin_awaiting_product_desc"
-    elif state == "admin_awaiting_product_desc":
-        context.user_data["product_desc"] = text
-        await delete_previous_message(context, user_id)
-        message = await update.message.reply_text(
+        context.user_data["state"] = "admin_awaiting_product_description"
+    elif state == "admin_awaiting_product_description":
+        context.user_data["product_description"] = text
+        new_message = await update.message.reply_text(
             LANGUAGES[lang]["enter_product_price"],
             parse_mode="Markdown"
         )
-        context.user_data["last_message_id"] = message.message_id
+        context.user_data["last_message_id"] = new_message.message_id
         context.user_data["message_type"] = "alert"
         context.user_data["state"] = "admin_awaiting_product_price"
     elif state == "admin_awaiting_product_price":
         try:
             price = float(text.replace(",", "."))
             if price <= 0:
-                raise ValueError
-        except ValueError:
-            await delete_previous_message(context, user_id)
-            message = await update.message.reply_text(
-                "❌ Invalid price. Please enter a positive number.",
+                raise ValueError("Price must be positive")
+            context.user_data["product_price"] = price
+            new_message = await update.message.reply_text(
+                LANGUAGES[lang]["enter_product_category"],
                 parse_mode="Markdown"
             )
-            context.user_data["last_message_id"] = message.message_id
+            context.user_data["last_message_id"] = new_message.message_id
             context.user_data["message_type"] = "alert"
-            return
-        context.user_data["product_price"] = price
-        await delete_previous_message(context, user_id)
-        message = await update.message.reply_text(
-            LANGUAGES[lang]["enter_product_category"],
-            parse_mode="Markdown"
-        )
-        context.user_data["last_message_id"] = message.message_id
-        context.user_data["message_type"] = "alert"
-        context.user_data["state"] = "admin_awaiting_product_category"
+            context.user_data["state"] = "admin_awaiting_product_category"
+        except ValueError:
+            new_message = await update.message.reply_text(
+                LANGUAGES[lang]["invalid_coin_amount"],
+                parse_mode="Markdown"
+            )
+            context.user_data["last_message_id"] = new_message.message_id
+            context.user_data["message_type"] = "alert"
+            context.user_data["state"] = "admin_awaiting_product_price"
     elif state == "admin_awaiting_product_category":
         context.user_data["product_category"] = text
-        await delete_previous_message(context, user_id)
-        message = await update.message.reply_text(
+        new_message = await update.message.reply_text(
             LANGUAGES[lang]["upload_product_image"],
             parse_mode="Markdown"
         )
-        context.user_data["last_message_id"] = message.message_id
+        context.user_data["last_message_id"] = new_message.message_id
         context.user_data["message_type"] = "alert"
         context.user_data["state"] = "admin_awaiting_product_image"
     elif state == "admin_awaiting_promo_code":
         context.user_data["promo_code"] = text.upper()
-        await delete_previous_message(context, user_id)
-        message = await update.message.reply_text(
+        new_message = await update.message.reply_text(
             LANGUAGES[lang]["enter_promo_discount"],
             parse_mode="Markdown"
         )
-        context.user_data["last_message_id"] = message.message_id
+        context.user_data["last_message_id"] = new_message.message_id
         context.user_data["message_type"] = "alert"
         context.user_data["state"] = "admin_awaiting_promo_discount"
     elif state == "admin_awaiting_promo_discount":
         try:
             discount = float(text)
-            if not 1 <= discount <= 100:
-                raise ValueError
-        except ValueError:
-            await delete_previous_message(context, user_id)
-            message = await update.message.reply_text(
-                "❌ Invalid discount. Please enter a percentage between 1 and 100.",
+            if not (1 <= discount <= 100):
+                raise ValueError("Discount must be between 1 and 100")
+            context.user_data["promo_discount"] = discount
+            new_message = await update.message.reply_text(
+                LANGUAGES[lang]["enter_promo_max_uses"],
                 parse_mode="Markdown"
             )
-            context.user_data["last_message_id"] = message.message_id
+            context.user_data["last_message_id"] = new_message.message_id
             context.user_data["message_type"] = "alert"
-            return
-        context.user_data["promo_discount"] = discount
-        await delete_previous_message(context, user_id)
-        message = await update.message.reply_text(
-            LANGUAGES[lang]["enter_promo_max_uses"],
-            parse_mode="Markdown"
-        )
-        context.user_data["last_message_id"] = message.message_id
-        context.user_data["message_type"] = "alert"
-        context.user_data["state"] = "admin_awaiting_promo_max_uses"
+            context.user_data["state"] = "admin_awaiting_promo_max_uses"
+        except ValueError:
+            new_message = await update.message.reply_text(
+                LANGUAGES[lang]["invalid_coin_amount"],
+                parse_mode="Markdown"
+            )
+            context.user_data["last_message_id"] = new_message.message_id
+            context.user_data["message_type"] = "alert"
+            context.user_data["state"] = "admin_awaiting_promo_discount"
     elif state == "admin_awaiting_promo_max_uses":
         try:
             max_uses = int(text)
             if max_uses <= 0:
-                raise ValueError
-        except ValueError:
-            await delete_previous_message(context, user_id)
-            message = await update.message.reply_text(
-                "❌ Invalid number. Please enter a positive integer.",
+                raise ValueError("Max uses must be positive")
+            conn = sqlite3.connect("store_bot.db")
+            try:
+                c = conn.cursor()
+                c.execute("INSERT INTO promo_codes (code, discount, max_uses) VALUES (?, ?, ?)",
+                          (context.user_data["promo_code"], context.user_data["promo_discount"], max_uses))
+                conn.commit()
+            finally:
+                conn.close()
+            new_message = await update.message.reply_text(
+                LANGUAGES[lang]["promo_added"],
                 parse_mode="Markdown"
             )
-            context.user_data["last_message_id"] = message.message_id
-            context.user_data["message_type"] = "alert"
-            return
-        conn = sqlite3.connect("store_bot.db")
-        try:
-            c = conn.cursor()
-            c.execute("INSERT INTO promo_codes (code, discount, max_uses) VALUES (?, ?, ?)",
-                      (context.user_data["promo_code"], context.user_data["promo_discount"], max_uses))
-            conn.commit()
-        except sqlite3.IntegrityError:
-            await delete_previous_message(context, user_id)
-            message = await update.message.reply_text(
-                "❌ Promo code already exists.",
-                parse_mode="Markdown"
-            )
-            context.user_data["last_message_id"] = message.message_id
+            context.user_data["last_message_id"] = new_message.message_id
             context.user_data["message_type"] = "alert"
             context.user_data["state"] = ""
             await show_admin_panel(update.message, context, lang)
-            return
-        finally:
-            conn.close()
-        await delete_previous_message(context, user_id)
-        message = await update.message.reply_text(
-            LANGUAGES[lang]["promo_added"],
-            parse_mode="Markdown"
-        )
-        context.user_data["last_message_id"] = message.message_id
-        context.user_data["message_type"] = "alert"
-        context.user_data["state"] = ""
-        await show_admin_panel(update.message, context, lang)
+        except ValueError:
+            new_message = await update.message.reply_text(
+                LANGUAGES[lang]["invalid_coin_amount"],
+                parse_mode="Markdown"
+            )
+            context.user_data["last_message_id"] = new_message.message_id
+            context.user_data["message_type"] = "alert"
+            context.user_data["state"] = "admin_awaiting_promo_max_uses"
     elif state == "awaiting_search_query":
-        query = text.lower()
+        search_query = text.lower()
+        store_id = context.user_data.get("store_id", 1)
         conn = sqlite3.connect("store_bot.db")
         try:
             c = conn.cursor()
-            c.execute("SELECT id, name, description, image, price FROM products WHERE store_id = ? AND (LOWER(name) LIKE ? OR LOWER(description) LIKE ?)",
-                     (context.user_data.get("store_id", 1), f"%{query}%", f"%{query}%"))
+            c.execute("""
+                SELECT id, name, description, image, price
+                FROM products
+                WHERE store_id = ? AND (LOWER(name) LIKE ? OR LOWER(description) LIKE ?)
+                LIMIT ?
+            """, (store_id, f"%{search_query}%", f"%{search_query}%", ITEMS_PER_BATCH))
             products = c.fetchall()
         finally:
             conn.close()
         if not products:
-            keyboard = [[InlineKeyboardButton(LANGUAGES[lang]["go_back"], callback_data=f"store_{context.user_data.get('store_id', 1)}")]]
-            await delete_previous_message(context, user_id)
-            message = await update.message.reply_text(
+            keyboard = [[InlineKeyboardButton(LANGUAGES[lang]["go_back"], callback_data=f"store_{store_id}")]]
+            new_message = await update.message.reply_text(
                 LANGUAGES[lang]["no_products"],
                 reply_markup=InlineKeyboardMarkup(keyboard),
                 parse_mode="Markdown"
             )
-            context.user_data["last_message_id"] = message.message_id
-            context.user_data["message_type"] = "alert"
+            context.user_data["last_message_id"] = new_message.message_id
+            context.user_data["message_type"] = "button"
             context.user_data["state"] = ""
             return
         for product in products:
             product_id, name, description, image, price = product
             price = round(float(price), 3)
+            text = f"*{name}*\n{description}\n💵 {'{:.3f}'.format(price)} UZS"
             keyboard = [
                 [InlineKeyboardButton(LANGUAGES[lang]["add_to_cart"], callback_data=f"add_to_cart_{product_id}")],
-                [InlineKeyboardButton(LANGUAGES[lang]["go_back"], callback_data=f"store_{context.user_data.get('store_id', 1)}")]
+                [InlineKeyboardButton(LANGUAGES[lang]["go_back"], callback_data=f"store_{store_id}")]
             ]
-            text = f"📦 *{name}*\n{description}\n💵 {'{:.3f}'.format(price)} UZS"
-            await delete_previous_message(context, user_id)
-            if image:
-                try:
+            try:
+                if image:
                     new_message = await update.message.reply_photo(
                         photo=image,
                         caption=text,
                         reply_markup=InlineKeyboardMarkup(keyboard),
                         parse_mode="Markdown"
                     )
-                except TelegramError:
+                else:
                     new_message = await update.message.reply_text(
                         text,
                         reply_markup=InlineKeyboardMarkup(keyboard),
                         parse_mode="Markdown"
                     )
-            else:
+                context.user_data["last_message_id"] = new_message.message_id
+                context.user_data["message_type"] = "button"
+            except TelegramError as e:
+                logger.error(f"Failed to send product {product_id}: {e}")
                 new_message = await update.message.reply_text(
                     text,
                     reply_markup=InlineKeyboardMarkup(keyboard),
                     parse_mode="Markdown"
                 )
-            context.user_data["last_message_id"] = new_message.message_id
-            context.user_data["message_type"] = "button"
-            await asyncio.sleep(0.5)
+                context.user_data["last_message_id"] = new_message.message_id
+                context.user_data["message_type"] = "button"
         context.user_data["state"] = ""
 
-# Handle location
 async def handle_location(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
+    location = update.message.location
     conn = sqlite3.connect("store_bot.db")
     try:
         c = conn.cursor()
@@ -1786,7 +1786,6 @@ async def handle_location(update: Update, context: ContextTypes.DEFAULT_TYPE):
         lang = user[0] if user else context.user_data.get("language", "en")
     finally:
         conn.close()
-    location = update.message.location
     context.user_data["location"] = {"latitude": location.latitude, "longitude": location.longitude}
     keyboard = [
         [InlineKeyboardButton("ЦУМ", callback_data="store_1"),
@@ -1802,10 +1801,8 @@ async def handle_location(update: Update, context: ContextTypes.DEFAULT_TYPE):
     context.user_data["message_type"] = "button"
     context.user_data["state"] = ""
 
-# Handle photo (for product image or coin receipt)
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
-    state = context.user_data.get("state", "")
     conn = sqlite3.connect("store_bot.db")
     try:
         c = conn.cursor()
@@ -1814,117 +1811,135 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         lang = user[0] if user else context.user_data.get("language", "en")
     finally:
         conn.close()
+    state = context.user_data.get("state", "")
     if state == "admin_awaiting_product_image":
         photo = update.message.photo[-1]
         file_id = photo.file_id
         store_id = context.user_data.get("admin_store_id", 1)
         product_data = {
-            "id": None,
             "name": context.user_data["product_name"],
-            "description": context.user_data["product_desc"],
-            "image": file_id,
+            "description": context.user_data["product_description"],
             "price": context.user_data["product_price"],
             "category": context.user_data["product_category"],
+            "image": file_id,
             "store_id": store_id
         }
         conn = sqlite3.connect("store_bot.db")
         try:
             c = conn.cursor()
-            c.execute("INSERT INTO products (name, description, image, price, category, store_id) VALUES (?, ?, ?, ?, ?, ?)",
-                      (product_data["name"], product_data["description"], product_data["image"],
-                       product_data["price"], product_data["category"], product_data["store_id"]))
-            product_data["id"] = c.lastrowid
+            c.execute("""
+                INSERT INTO products (name, description, image, price, category, store_id)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (
+                product_data["name"],
+                product_data["description"],
+                product_data["image"],
+                product_data["price"],
+                product_data["category"],
+                store_id
+            ))
+            product_id = c.lastrowid
+            product_data["id"] = product_id
             conn.commit()
+            log_product_to_file(product_data)
         finally:
             conn.close()
-        log_product_to_file(product_data)
-        await delete_previous_message(context, user_id)
-        message = await update.message.reply_text(
+        new_message = await update.message.reply_text(
             LANGUAGES[lang]["product_added"],
             parse_mode="Markdown"
         )
-        context.user_data["last_message_id"] = message.message_id
+        context.user_data["last_message_id"] = new_message.message_id
         context.user_data["message_type"] = "alert"
         context.user_data["state"] = ""
         await show_admin_panel(update.message, context, lang)
     elif state == "awaiting_coin_receipt":
         photo = update.message.photo[-1]
         file_id = photo.file_id
-        amount = context.user_data.get("coin_amount", 0)
+        amount = context.user_data.get("coin_amount")
         conn = sqlite3.connect("store_bot.db")
         try:
             c = conn.cursor()
-            c.execute("INSERT INTO coin_requests (user_id, amount, status, receipt_file_id, created_at) VALUES (?, ?, ?, ?, ?)",
-                      (user_id, amount, "pending", file_id, datetime.now(UZBEKISTAN_TZ).strftime("%Y-%m-%d %H:%M:%S")))
+            c.execute("""
+                INSERT INTO coin_requests (user_id, amount, status, receipt_file_id, created_at)
+                VALUES (?, ?, ?, ?, ?)
+            """, (
+                user_id,
+                amount,
+                "pending",
+                file_id,
+                datetime.now(UZBEKISTAN_TZ).strftime("%Y-%m-%d %H:%M:%S")
+            ))
             coin_request_id = c.lastrowid
             conn.commit()
+
         finally:
             conn.close()
-        await delete_previous_message(context, user_id)
-        message = await update.message.reply_text(
+
+        new_message = await update.message.reply_text(
             LANGUAGES[lang]["coin_request_sent"],
             parse_mode="Markdown"
         )
-        context.user_data["last_message_id"] = message.message_id
+        context.user_data["last_message_id"] = new_message.message_id
         context.user_data["message_type"] = "alert"
         context.user_data["state"] = ""
+
         for admin in ADMIN_ID:
             try:
                 keyboard = [
-                    [InlineKeyboardButton("✅ Approve", callback_data=f"approve_coin_{coin_request_id}"),
-                     InlineKeyboardButton("❌ Reject", callback_data=f"reject_coin_{coin_request_id}")]
+                    [
+                        InlineKeyboardButton("✅ Approve", callback_data=f"approve_coin_{coin_request_id}"),
+                        InlineKeyboardButton("❌ Reject", callback_data=f"reject_coin_{coin_request_id}")
+                    ]
                 ]
                 await context.bot.send_photo(
-                    admin,
+                    chat_id=admin,
                     photo=file_id,
-                    caption=f"🧾 Coin request from user {user_id} for {'{:.3f}'.format(amount)} coins.",
+                    caption=f"Coin request from user {user_id}: {'{:.3f}'.format(amount)} coins",
                     reply_markup=InlineKeyboardMarkup(keyboard),
                     parse_mode="Markdown"
                 )
             except TelegramError as e:
                 logger.error(f"Failed to notify admin {admin}: {e}")
+
         await show_main_menu(update.message, context, lang)
 
-# Scheduler for admin response timeout
-async def check_admin_timeout(context: ContextTypes.DEFAULT_TYPE):
+# Timeout job for admin response
+async def setup_timeout(context: ContextTypes.DEFAULT_TYPE):
     conn = sqlite3.connect("store_bot.db")
     try:
         c = conn.cursor()
-        timeout_threshold = datetime.now(UZBEKISTAN_TZ) - timedelta(minutes=ADMIN_RESPONSE_TIMEOUT)
-        c.execute("SELECT order_id, user_id FROM orders WHERE status = 'pending' AND created_at <= ?",
-                  (timeout_threshold.strftime("%Y-%m-%d %H:%M:%S"),))
-        pending_orders = c.fetchall()
-        for order_id, user_id in pending_orders:
-            c.execute("SELECT language FROM users WHERE user_id = ?", (user_id,))
-            user = c.fetchone()
-            lang = user[0] if user else "en"
+        c.execute("SELECT order_id, user_id FROM orders WHERE status = 'pending') AND created_at <= ?", 
+                  ((datetime.now(UZBEKISTAN_TZ) - timedelta(minutes=ADMIN_RESPONSE_TIMEOUT)).strftime("%Y-%m-%d %H:%M:%S"),))
+        orders = c.fetchall()
+        for order_id, user_id in orders:
+            c.execute("UPDATE orders SET status = 'cancelled' WHERE order_id = ?", (order_id,))
             try:
+                c.execute("SELECT language FROM users WHERE user_id = ?", (user_id,))
+                lang = c.fetchone()[0] if c.fetchone() else "en"
                 await context.bot.send_message(
                     user_id,
-                    LANGUAGES[lang]["order_confirmed"].format(time=context.user_data.get("delivery_time", "Admin will choose")),
+                    f"❌ Order {order_id} was cancelled due to no admin response within {ADMIN_RESPONSE_TIMEOUT} minutes.",
                     parse_mode="Markdown"
                 )
-                c.execute("UPDATE orders SET status = 'confirmed' WHERE order_id = ?", (order_id,))
-                conn.commit()
             except TelegramError as e:
                 logger.error(f"Failed to notify user {user_id} for order {order_id}: {e}")
+        conn.commit()
     finally:
         conn.close()
 
-# Main function
 def main():
     init_db()
-    app = Application.builder().token(API_TOKEN).build()
+    application = Application.builder().token(API_TOKEN).build()  # Use Application, not Updater
     scheduler = AsyncIOScheduler(timezone=UZBEKISTAN_TZ)
-    scheduler.add_job(check_admin_timeout, "interval", minutes=5, args=[app])
+    scheduler.add_job(setup_timeout, 'interval', minutes=30, args=[application])
     scheduler.start()
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CallbackQueryHandler(button_callback))
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
-    app.add_handler(MessageHandler(filters.LOCATION, handle_location))
-    app.add_handler(MessageHandler(filters.PHOTO, handle_photo))
-    app.add_error_handler(error_handler)
-    app.run_polling()
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CallbackQueryHandler(button_callback))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    application.add_handler(MessageHandler(filters.LOCATION, handle_location))
+    application.add_handler(MessageHandler(filters.PHOTO, handle_photo))
+    application.add_error_handler(error_handler)
+    application.run_polling()
 
 if __name__ == "__main__":
     main()
