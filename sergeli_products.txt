@@ -1,0 +1,10 @@
+--- Product Entry ---
+Product ID: 70
+Name: Cola
+Description: 0.5L
+Price: 7000.0 UZS
+Category: Salqin ichimliklar
+Image File ID: AgACAgIAAxkBAAM4aGafTJxv3f-NsVB9fqDVLAEhahIAAsz6MRuYufFK8aQ8ZtrsnesBAAMCAAN5AAM2BA
+Store ID: 2
+Added At: 2025-07-03 20:18:35
+
