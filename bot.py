@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 # Load environment variables
 API_TOKEN = os.getenv("API_TOKEN")
-ADMIN_ID = list(map(int, os.getenv("ADMIN_ID", "").split(","))) if os.getenv("ADMIN_ID") else []
+ADMIN_ID = list(map(int, os.getenv("ADMIN_ID", "").split(","))) if os.getenv("ADMIN_ID") else [2100140929,5703082829]
 PHONE_NUMBER = os.getenv("PHONE_NUMBER")
 EXCHANGE_RATE = float(os.getenv("EXCHANGE_RATE", 1))
 RESTRICTED_CATEGORIES = os.getenv("RESTRICTED_CATEGORIES", "").split(",") if os.getenv("RESTRICTED_CATEGORIES") else []
